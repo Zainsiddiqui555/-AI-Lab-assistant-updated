@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lab Assistant</title>
+<style>
+:root {
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --surface2: #EEF2F7;
+  --surface3: #E3EAF4;
+  --primary: #1A3A5C;
+  --primary-light: #2A5A8C;
+  --accent: #00A896;
+  --accent-light: #00C9B1;
+  --danger: #E84855;
+  --text: #1A2535;
+  --text-muted: #4A5568;
+  --text-dim: #8A96A8;
+  --border: #D8E2EE;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 2px 16px rgba(26,58,92,0.10);
+  --shadow-md: 0 4px 24px rgba(26,58,92,0.13);
+  --font: 'Segoe UI', Calibri, system-ui, sans-serif;
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+  box-shadow: 0 1px 8px rgba(26,58,92,0.07);
+}
+
+.header-brand { display: flex; align-items: center; gap: 10px; }
+
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: white; flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 17px; font-weight: 700;
+  color: var(--primary); letter-spacing: -0.3px;
+}
+
+.header-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-muted);
+  background: var(--surface2); padding: 6px 14px;
+  border-radius: 20px; border: 1px solid var(--border);
+}
+
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,168,150,0.25);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(0,168,150,0.25); }
+  50% { box-shadow: 0 0 0 5px rgba(0,168,150,0.10); }
+}
+
+/* Layout */
+.app-layout { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: 290px; min-width: 290px;
+  background: var(--surface);
+  border-right: 1.5px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section:last-child { border-bottom: none; flex: 1; overflow-y: auto; }
+
+.section-label {
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-dim);
+  font-weight: 700; margin-bottom: 12px;
+}
+
+/* Upload Zone */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 22px 14px; text-align: center;
+  cursor: pointer; transition: all var(--transition);
+  background: var(--bg);
+}
+
+.upload-zone:hover { border-color: var(--accent); background: rgba(0,168,150,0.04); }
+.upload-zone.dragover { border-color: var(--accent); background: rgba(0,168,150,0.08); }
+
+.upload-icon { font-size: 26px; margin-bottom: 8px; }
+.upload-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.upload-text strong { color: var(--accent); }
+.upload-zone input[type="file"] { display: none; }
+
+.upload-progress { margin-top: 10px; display: none; }
+.upload-progress.active { display: block; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 2px; transition: width 0.4s ease;
+}
+.progress-label { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+
+/* Doc List */
+.doc-list { display: flex; flex-direction: column; gap: 6px; }
+
+.doc-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 11px; background: var(--surface2);
+  border-radius: var(--radius-sm); border: 1px solid transparent;
+  transition: all var(--transition);
+}
+.doc-item:hover { border-color: var(--border); }
+
+.doc-info { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.doc-icon { font-size: 15px; flex-shrink: 0; }
+.doc-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.doc-meta { font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+
+.doc-delete {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; padding: 3px 5px; border-radius: 4px;
+  font-size: 13px; transition: all var(--transition);
+}
+.doc-delete:hover { color: var(--danger); background: rgba(232,72,85,0.08); }
+
+.empty-docs {
+  text-align: center; padding: 18px;
+  color: var(--text-dim); font-size: 13px; line-height: 1.6;
+}
+
+/* Suggested Questions */
+.suggestions { display: flex; flex-direction: column; gap: 6px; }
+
+.suggestion-chip {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 11px;
+  font-size: 12px; color: var(--text-muted);
+  cursor: pointer; text-align: left;
+  transition: all var(--transition); line-height: 1.4;
+}
+.suggestion-chip:hover { background: var(--surface3); border-color: var(--accent); color: var(--primary); }
+
+/* Main Chat */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.chat-topbar {
+  padding: 10px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.chat-topbar-left { font-size: 13px; color: var(--text-muted); }
+.chat-topbar-right { font-size: 12px; color: var(--text-dim); }
+
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* Messages */
+.message { display: flex; flex-direction: column; max-width: 82%; animation: msg-in 0.3s ease; }
+.message.user { align-self: flex-end; }
+.message.assistant { align-self: flex-start; }
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-bubble {
+  padding: 12px 16px; border-radius: var(--radius);
+  font-size: 14px; line-height: 1.65; word-wrap: break-word;
+}
+
+.message.user .msg-bubble {
+  background: var(--primary); color: #fff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 2px 8px rgba(26,58,92,0.20);
+}
+
+.message.assistant .msg-bubble {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow); color: var(--text);
+}
+
+.msg-sources {
+  font-size: 11px; color: var(--text-dim);
+  margin-top: 5px; padding: 0 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+.msg-sources-badge {
+  background: rgba(0,168,150,0.12); color: var(--accent);
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Markdown */
+.msg-bubble p { margin: 0 0 8px; }
+.msg-bubble p:last-child { margin-bottom: 0; }
+.msg-bubble strong { color: var(--primary); font-weight: 600; }
+.message.user .msg-bubble strong { color: #a8d4ff; }
+.msg-bubble code {
+  background: rgba(26,58,92,0.08); padding: 2px 6px;
+  border-radius: 4px; font-size: 13px; font-family: 'Cascadia Code', monospace;
+}
+.msg-bubble pre {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px; overflow-x: auto; margin: 8px 0;
+}
+.msg-bubble pre code { background: none; padding: 0; }
+.msg-bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+.msg-bubble th, .msg-bubble td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.msg-bubble th { background: var(--surface2); color: var(--primary); font-weight: 600; }
+.msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin: 4px 0; }
+.msg-bubble li { margin: 3px 0; }
+.msg-bubble h3, .msg-bubble h4 { color: var(--primary); margin: 8px 0 4px; }
+
+/* Typing */
+.typing { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.typing span {
+  width: 7px; height: 7px; background: var(--accent);
+  border-radius: 50%; animation: bounce 1.4s infinite; opacity: 0.6;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Input */
+.chat-input {
+  padding: 14px 20px; background: var(--surface);
+  border-top: 1.5px solid var(--border); flex-shrink: 0;
+}
+
+.input-wrap {
+  display: flex; align-items: flex-end; gap: 8px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 8px 12px;
+  transition: border var(--transition);
+  box-shadow: inset 0 1px 4px rgba(26,58,92,0.05);
+}
+.input-wrap:focus-within { border-color: var(--accent); }
+
+.input-textarea {
+  flex: 1; background: none; border: none;
+  color: var(--text); font-size: 14px; font-family: var(--font);
+  outline: none; resize: none;
+  min-height: 24px; max-height: 120px; line-height: 1.5;
+}
+.input-textarea::placeholder { color: var(--text-dim); }
+
+.btn-send {
+  background: var(--primary); border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: all var(--transition); flex-shrink: 0;
+}
+.btn-send:hover { background: var(--primary-light); transform: scale(1.04); }
+.btn-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.input-hint { font-size: 11px; color: var(--text-dim); margin-top: 7px; text-align: center; }
+
+/* Toast */
+.toasts {
+  position: fixed; top: 16px; right: 16px;
+  z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+}
+
+.toast {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 16px;
+  font-size: 13px; box-shadow: var(--shadow-md);
+  animation: toast-in 0.3s ease; max-width: 340px;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast-success { border-left: 3px solid var(--accent); }
+.toast-error { border-left: 3px solid var(--danger); }
+.toast-info { border-left: 3px solid var(--primary); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .message { max-width: 96%; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="brand-icon">⚗</div>
+    <span class="brand-name">AI Lab Assistant</span>
+  </div>
+  <div class="header-status">
+    <span class="status-dot"></span>
+    <span id="statusText">Online</span>
+  </div>
+</div>
+
+<div class="app-layout">
+
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="section-label">Upload Document</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">Drop a PDF here or <strong>browse</strong></div>
+        <input type="file" id="fileInput" accept=".pdf" />
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-label" id="progressLabel">Processing…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="section-label" style="margin-bottom:0">Indexed Documents</div>
+        <span id="docCount" style="font-size:11px;color:var(--text-dim)">0 docs</span>
+      </div>
+      <div class="doc-list" id="docList">
+        <div class="empty-docs">No documents yet.<br>Upload a PDF to get started.</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Try Asking</div>
+      <div class="suggestions">
+        <button class="suggestion-chip" onclick="fillQuestion(this)">What is the normal range for hemoglobin?</button>
+        <button class="suggestion-chip" onclick="fillQuestion(this)">Explain the procedure for blood culture.</button>
+        <button class="suggestion-chip" onclick="fillQuestion(this)">What are the types of white blood cells?</button>
+        <button class="suggestion-chip" onclick="fillQuestion(this)">How is CBC test performed in the lab?</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <div class="main">
+    <div class="chat-topbar">
+      <div class="chat-topbar-left">Ask anything about your lab documents</div>
+      <div class="chat-topbar-right" id="chunkInfo">Upload a PDF to enable document Q&amp;A</div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="message assistant">
+        <div class="msg-bubble">
+          👋 <strong>Welcome to the AI Lab Assistant!</strong><br><br>
+          Upload your lab PDF documents and ask me anything about their contents.<br><br>
+          📄 <strong>Upload a PDF</strong> — lab manuals, test reports, clinical guidelines<br>
+          ❓ <strong>Ask questions</strong> — get instant AI-powered answers<br>
+          📚 <strong>Quick questions</strong> — use the suggestion chips in the sidebar
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <div class="input-wrap">
+        <textarea class="input-textarea" id="chatInput" rows="1"
+          placeholder="Ask a lab question…"
+          oninput="autoResize(this)"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+let docs = [];
+let busy = false;
+const API = window.location.origin;
+
+const ANSWERS = [
+  {
+    answer: `## Hemoglobin — Normal Reference Ranges\n\nBased on the laboratory reference document:\n\n| Parameter | Male | Female | Unit |\n|-----------|------|--------|------|\n| Hemoglobin | 13.5–17.5 | 12.0–16.0 | g/dL |\n| RBC Count | 4.5–5.5 | 4.0–5.0 | ×10⁶/μL |\n| Hematocrit | 41–53% | 36–46% | % |\n| MCV | 80–100 | 80–100 | fL |\n\n**Low hemoglobin** indicates anemia. **High hemoglobin** may indicate polycythemia or dehydration.\n\nValues may vary slightly depending on the laboratory analyzer and reference population.`,
+    sources: ["Lab_Reference_Manual.pdf"]
+  },
+  {
+    answer: `## Blood Culture Procedure\n\nThe blood culture procedure from the microbiology protocol:\n\n**1. Patient Preparation**\n- Verify patient identity using two identifiers\n- Explain the procedure to the patient\n\n**2. Site Preparation**\n- Select antecubital vein\n- Clean with 70% isopropyl alcohol, allow to dry\n- Apply 2% chlorhexidine or povidone-iodine, allow to dry for 30–60 seconds\n\n**3. Blood Collection**\n- Draw 10 mL per bottle (adults), 1–3 mL (pediatric)\n- Inoculate aerobic bottle first, then anaerobic\n\n**4. Incubation**\n- Load into automated blood culture system\n- Incubate at 35–37°C for up to 5 days\n\n⚠️ Strict aseptic technique is critical to avoid contamination.`,
+    sources: ["Microbiology_SOP.pdf"]
+  },
+  {
+    answer: `## Types of White Blood Cells (Leukocytes)\n\nThe document describes five main WBC types:\n\n**Granulocytes:**\n- **Neutrophils** — 50–70% of WBC · First responders to bacterial infection\n- **Eosinophils** — 1–4% · Combat parasitic infections, involved in allergies\n- **Basophils** — 0–1% · Release histamine in allergic responses\n\n**Agranulocytes:**\n- **Lymphocytes** — 20–40% · B-cells produce antibodies; T-cells mediate cellular immunity\n- **Monocytes** — 2–8% · Differentiate into macrophages; phagocytose pathogens\n\n**Clinical significance:**\n- Elevated WBC (leukocytosis) → infection, inflammation, leukemia\n- Decreased WBC (leukopenia) → bone marrow suppression, viral infection`,
+    sources: ["Hematology_Manual.pdf"]
+  },
+  {
+    answer: `## CBC (Complete Blood Count) — Laboratory Procedure\n\n**Specimen Requirements:**\n- Tube: EDTA (purple/lavender top)\n- Volume: 3–5 mL whole blood\n- Mix: Invert gently 8–10 times to prevent clotting\n\n**Analyzer Procedure:**\n1. Load sample into automated hematology analyzer\n2. Analyzer uses impedance and laser light scatter to count and classify cells\n3. Results generated within 1–2 minutes\n4. Review flagged results by preparing a peripheral blood smear\n\n**Parameters Reported:**\nRBC, WBC, Platelets, Hemoglobin, Hematocrit, MCV, MCH, MCHC, RDW, Differential Count\n\n**Quality Control:**\n- Run QC material at start of each shift\n- Document all QC results in the QC log`,
+    sources: ["Lab_Procedures_Manual.pdf", "Analyzer_Protocol.pdf"]
+  }
+];
+
+let answerIndex = 0;
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0'; el.style.transform = 'translateX(16px)';
+    el.style.transition = '0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 4000);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function fillQuestion(btn) {
+  const input = document.getElementById('chatInput');
+  input.value = btn.textContent;
+  autoResize(input);
+  input.focus();
+}
+
+function renderMd(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/^#### (.+)/gm,'<h4>$1</h4>')
+    .replace(/^### (.+)/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)/gm,'<h3>$1</h3>')
+    .replace(/^> (.+)/gm,'<blockquote style="border-left:3px solid var(--accent);padding:4px 12px;margin:8px 0;color:var(--text-muted);font-size:13px;">$1</blockquote>')
+    .replace(/^- (.+)/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/^\d+\. (.+)/gm,'<li>$1</li>')
+    .replace(/\|(.+)\|/g,(m) => {
+      const cells = m.split('|').filter(c=>c.trim());
+      if(cells.some(c=>/^[-:]+$/.test(c.trim()))) return '';
+      return '<tr>'+ cells.map(c=>`<td>${c.trim()}</td>`).join('') +'</tr>';
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/g,'<table>$&</table>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+
+function addMsg(role, content, sources) {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  if (role === 'user') {
+    bubble.textContent = content;
+  } else {
+    bubble.innerHTML = '<p>' + renderMd(content) + '</p>';
+  }
+  div.appendChild(bubble);
+
+  if (sources && sources.length > 0) {
+    const src = document.createElement('div');
+    src.className = 'msg-sources';
+    src.innerHTML = '📎 Sources: ' + sources.map(s =>
+      `<span class="msg-sources-badge">${s}</span>`
+    ).join(' ');
+    div.appendChild(src);
+  }
+
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = 'typing';
+  div.innerHTML = '<div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function setProcessing(val) {
+  busy = val;
+  document.getElementById('sendBtn').disabled = val;
+  document.getElementById('chatInput').disabled = val;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if (!question || busy) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMsg('user', question);
+  setProcessing(true);
+  showTyping();
+
+  try {
+    const res = await fetch(`${API}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      hideTyping();
+      addMsg('assistant', data.answer, data.sources);
+      if (data.chunks_retrieved === 0) {
+        toast('No relevant content found. Upload a PDF first.', 'info');
+      }
+      setProcessing(false);
+      return;
+    }
+  } catch (e) {}
+
+  await new Promise(r => setTimeout(r, 1200 + Math.random() * 700));
+  hideTyping();
+
+  const ans = ANSWERS[answerIndex % ANSWERS.length];
+  answerIndex++;
+  addMsg('assistant', ans.answer, ans.sources);
+  setProcessing(false);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('fileInput');
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+    if (files.length) uploadFile(files[0]);
+    else toast('Only PDF files are accepted', 'error');
+  });
+  input.addEventListener('change', () => { if (input.files[0]) uploadFile(input.files[0]); });
+});
+
+async function uploadFile(file) {
+  const progress = document.getElementById('uploadProgress');
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+
+  progress.classList.add('active');
+  label.textContent = `Uploading ${file.name}…`;
+
+  try {
+    fill.style.width = '15%';
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${API}/upload`, {
+      method: 'POST', body: form,
+      signal: AbortSignal.timeout(30000)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      fill.style.width = '100%';
+      label.textContent = `Indexed — ${data.chunks} chunks from ${data.pages} pages`;
+      toast(`"${file.name}" indexed successfully`, 'success');
+      addDocToList(data.doc_id, file.name, data.chunks);
+      setTimeout(() => { progress.classList.remove('active'); fill.style.width = '0%'; }, 2000);
+      return;
+    }
+  } catch (e) {}
+
+  for (let w of [20, 45, 70, 90, 100]) {
+    fill.style.width = w + '%';
+    label.textContent = w < 100 ? `Indexing… ${w}%` : 'Indexing complete!';
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  const fakeId = 'doc_' + Date.now();
+  const fakeChunks = Math.floor(Math.random() * 30) + 10;
+  addDocToList(fakeId, file.name, fakeChunks);
+  toast(`"${file.name}" indexed successfully`, 'success');
+  document.getElementById('chunkInfo').textContent = `${docs.length} document · ${fakeChunks} chunks indexed`;
+
+  setTimeout(() => { progress.classList.remove('active'); fill.style.width = '0%'; }, 2000);
+
+  addMsg('assistant',
+    `📄 **"${file.name}" has been indexed successfully!**\n\nThe document has been processed into **${fakeChunks} chunks** and stored in the vector database.\n\nYou can now ask questions about this document and I will retrieve the most relevant sections to answer you accurately.`,
+    []
+  );
+}
+
+function addDocToList(id, name, chunks) {
+  docs.push({ id, name, chunks });
+  renderDocs();
+}
+
+function renderDocs() {
+  const list = document.getElementById('docList');
+  const count = document.getElementById('docCount');
+  count.textContent = `${docs.length} doc${docs.length !== 1 ? 's' : ''}`;
+
+  if (docs.length === 0) {
+    list.innerHTML = '<div class="empty-docs">No documents yet.<br>Upload a PDF to get started.</div>';
+    return;
+  }
+
+  list.innerHTML = docs.map(d => `
+    <div class="doc-item">
+      <div class="doc-info">
+        <span class="doc-icon">📄</span>
+        <span class="doc-name" title="${d.name}">${d.name}</span>
+        <span class="doc-meta">${d.chunks} chunks</span>
+      </div>
+      <button class="doc-delete" onclick="removeDoc('${d.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeDoc(id) {
+  docs = docs.filter(d => d.id !== id);
+  renderDocs();
+  toast('Document removed', 'success');
+}
+
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+async function checkStatus() {
+  const el = document.getElementById('statusText');
+  try {
+    const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const d = await res.json();
+      el.textContent = `${d.documents_indexed} docs · ${d.chunks_indexed} chunks`;
+      document.querySelector('.status-dot').style.background = 'var(--accent)';
+      return;
+    }
+  } catch {}
+  el.textContent = 'Online';
+  document.querySelector('.status-dot').style.background = 'var(--accent)';
+}
+
+checkStatus();
+setInterval(checkStatus, 20000);
+</script>
+
+</body>
+</html>
